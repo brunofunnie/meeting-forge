@@ -88,6 +88,7 @@ public enum ProviderID: String, Codable, CaseIterable, Sendable {
     case anthropic = "anthropic"
     case gemini = "gemini"
     case ollamaCloud = "ollama-cloud"
+    case ollamaLocal = "ollama-local"
     case claudeCode = "claude-code"
 
     public var displayName: String {
@@ -96,12 +97,13 @@ public enum ProviderID: String, Codable, CaseIterable, Sendable {
         case .anthropic: "Anthropic (Claude API)"
         case .gemini: "Google AI Studio (Gemini)"
         case .ollamaCloud: "Ollama Cloud"
+        case .ollamaLocal: "Ollama (local)"
         case .claudeCode: "Claude Code"
         }
     }
 
     /// Providers that need an API key stored in Keychain.
-    public var requiresAPIKey: Bool { self != .claudeCode }
+    public var requiresAPIKey: Bool { self != .claudeCode && self != .ollamaLocal }
 }
 
 public enum TranscriptionEngineID: String, Codable, CaseIterable, Sendable {

@@ -236,6 +236,7 @@ struct RegenerateSheet: View {
     @State private var provider: ProviderID = .anthropic
     @State private var model = ""
     @State private var templateName: String?
+    @State private var availableModels: [String] = []
 
     var body: some View {
         Form {
@@ -251,7 +252,17 @@ struct RegenerateSheet: View {
                     }
                 }
             }
-            TextField("Model", text: $model)
+            HStack {
+                Picker("Model", selection: $model) {
+                    ForEach(availableModels, id: \.self) { Text($0).tag($0) }
+                    if !model.isEmpty && !availableModels.contains(model) {
+                        Text(model).tag(model)
+                    }
+                }
+                Button {
+                    Task { await loadModels(force: true) }
+                } label: { Image(systemName: "arrow.clockwise") }
+            }
             Picker("Template", selection: $templateName) {
                 ForEach(templates) { Text($0.name).tag(Optional($0.name)) }
             }
@@ -270,10 +281,25 @@ struct RegenerateSheet: View {
         }
         .padding()
         .frame(width: 420)
-        .onAppear {
+        .task {
             provider = settings.defaultProvider
-            model = settings.defaultModel(for: provider) ?? ""
             templateName = templates.first?.name
+            await loadModels(force: false)
+        }
+        .onChange(of: provider) {
+            model = settings.defaultModel(for: provider) ?? ""
+            Task { await loadModels(force: false) }
+        }
+    }
+
+    private func loadModels(force: Bool) async {
+        let catalog = ModelCatalog()
+        availableModels = (try? await catalog.models(
+            for: settings.makeProvider(provider),
+            apiKey: settings.apiKey(for: provider),
+            forceRefresh: force)) ?? []
+        if model.isEmpty || !availableModels.contains(model) {
+            model = settings.defaultModel(for: provider) ?? availableModels.first ?? ""
         }
     }
 }

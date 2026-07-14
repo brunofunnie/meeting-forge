@@ -1,23 +1,39 @@
 import Foundation
 
+/// Talks to an Ollama server — the hosted cloud (Bearer auth) or a local
+/// instance (no auth), selected via `id`/`baseURL`/`requiresAuth`.
 public struct OllamaCloudProvider: MinutesProvider {
-    public let id: ProviderID = .ollamaCloud
+    public let id: ProviderID
     let transport: StreamTransport
     let baseURL: URL
+    let requiresAuth: Bool
 
-    public init(transport: StreamTransport = URLSessionTransport(),
-                baseURL: URL = URL(string: "https://ollama.com")!) {
+    public init(id: ProviderID = .ollamaCloud,
+                transport: StreamTransport = URLSessionTransport(),
+                baseURL: URL = URL(string: "https://ollama.com")!,
+                requiresAuth: Bool = true) {
+        self.id = id
         self.transport = transport
         self.baseURL = baseURL
+        self.requiresAuth = requiresAuth
+    }
+
+    /// Preconfigured provider for a local Ollama install.
+    public static func local() -> OllamaCloudProvider {
+        OllamaCloudProvider(id: .ollamaLocal,
+                            baseURL: URL(string: "http://localhost:11434")!,
+                            requiresAuth: false)
     }
 
     public func generate(_ request: MinutesRequest) async throws -> AsyncThrowingStream<MinutesEvent, Error> {
-        guard let apiKey = request.apiKey, !apiKey.isEmpty else {
+        if requiresAuth, request.apiKey?.isEmpty != false {
             throw ProviderError.missingAPIKey(id)
         }
         var urlRequest = URLRequest(url: baseURL.appendingPathComponent("api/chat"))
         urlRequest.httpMethod = "POST"
-        urlRequest.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        if let apiKey = request.apiKey, !apiKey.isEmpty {
+            urlRequest.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        }
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
         urlRequest.httpBody = try JSONSerialization.data(withJSONObject: [
             "model": request.model,
@@ -60,9 +76,13 @@ public struct OllamaCloudProvider: MinutesProvider {
     }
 
     public func listModels(apiKey: String?) async throws -> [String] {
-        guard let apiKey, !apiKey.isEmpty else { throw ProviderError.missingAPIKey(id) }
+        if requiresAuth, apiKey?.isEmpty != false {
+            throw ProviderError.missingAPIKey(id)
+        }
         var urlRequest = URLRequest(url: baseURL.appendingPathComponent("api/tags"))
-        urlRequest.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        if let apiKey, !apiKey.isEmpty {
+            urlRequest.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        }
         let (http, lines) = try await transport.lines(for: urlRequest)
         guard http.statusCode == 200 else { try await throwHTTPError(status: http.statusCode, lines: lines) }
         var body = ""

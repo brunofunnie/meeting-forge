@@ -19,6 +19,20 @@ final class NewMeetingFormModel {
     var availableModels: [String] = []
     var runViewModel = MeetingRunViewModel()
     var didLoadDefaults = false
+
+    /// Clears every field back to defaults for a fresh meeting.
+    @MainActor
+    func reset(defaultProvider: ProviderID, defaultModel: String?, firstTemplateName: String?) {
+        title = ""
+        files = []
+        language = .auto
+        minutesLanguage = .matchTranscript
+        diarize = false
+        selectedTemplateName = firstTemplateName
+        provider = defaultProvider
+        model = defaultModel ?? ""
+        runViewModel = MeetingRunViewModel()
+    }
 }
 
 struct NewMeetingView: View {
@@ -96,6 +110,19 @@ struct NewMeetingView: View {
         }
         .formStyle(.grouped)
         .navigationTitle("New Meeting")
+        .toolbar {
+            Button {
+                form.reset(
+                    defaultProvider: settings.defaultProvider,
+                    defaultModel: settings.defaultModel(for: settings.defaultProvider),
+                    firstTemplateName: templates.first?.name)
+                Task { await loadModels(force: false) }
+            } label: {
+                Label("New Meeting", systemImage: "plus")
+            }
+            .help("Clear all fields and start a new meeting")
+            .disabled(form.runViewModel.isRunning)
+        }
         .fileImporter(isPresented: $showImporter,
                       allowedContentTypes: [.audio],
                       allowsMultipleSelection: true) { result in

@@ -24,5 +24,9 @@ import Foundation
 @Test func providerDisplayNames() {
     #expect(ProviderID.openAI.displayName == "OpenAI")
     #expect(ProviderID.claudeCode.displayName == "Claude Code")
-    #expect(ProviderID.allCases.count == 5)
+    #expect(ProviderID.ollamaLocal.displayName == "Ollama (local)")
+    #expect(ProviderID.allCases.count == 6)
+    #expect(!ProviderID.ollamaLocal.requiresAPIKey)
+    #expect(!ProviderID.claudeCode.requiresAPIKey)
+    #expect(ProviderID.ollamaCloud.requiresAPIKey)
 }

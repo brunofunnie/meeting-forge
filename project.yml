@@ -17,6 +17,7 @@ targets:
       path: App/Info.plist
       properties:
         CFBundleDisplayName: MeetingForge
+        CFBundleIconFile: AppIcon
         NSSpeechRecognitionUsageDescription: "MeetingForge transcribes your meeting audio on-device."
         LSMinimumSystemVersion: "26.0"
     settings:

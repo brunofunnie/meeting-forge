@@ -67,8 +67,11 @@ final class SettingsStore {
 
     /// Provider is usable now: has an API key, or (Claude Code) the CLI is present.
     func isAvailable(_ id: ProviderID) -> Bool {
-        if id == .claudeCode { return claudeExecutableURL() != nil }
-        return !(apiKey(for: id) ?? "").isEmpty
+        switch id {
+        case .claudeCode: return claudeExecutableURL() != nil
+        case .ollamaLocal: return true // reachability surfaces as a run-time error
+        default: return !(apiKey(for: id) ?? "").isEmpty
+        }
     }
 
     func makeProvider(_ id: ProviderID) -> MinutesProvider {
@@ -77,6 +80,7 @@ final class SettingsStore {
         case .anthropic: AnthropicProvider()
         case .gemini: GeminiProvider()
         case .ollamaCloud: OllamaCloudProvider()
+        case .ollamaLocal: OllamaCloudProvider.local()
         case .claudeCode: ClaudeCodeProvider(executableURL: claudeExecutableURL())
         }
     }
