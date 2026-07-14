@@ -7,6 +7,7 @@ struct SettingsView: View {
     @State private var claudeStatus: String = ""
     @State private var downloadProgress: [String: Double] = [:]
     @State private var downloadedModels: [String] = []
+    @State private var downloadError: String?
 
     private var whisperManager: WhisperKitModelManager {
         WhisperKitModelManager(modelsDirectory: AppPaths.whisperModelsDirectory)
@@ -42,6 +43,11 @@ struct SettingsView: View {
                                 Button("Download") { download(model) }
                             }
                         }
+                    }
+                    if let downloadError {
+                        Text(downloadError)
+                            .font(.caption)
+                            .foregroundStyle(.red)
                     }
                 }
             }
@@ -107,6 +113,7 @@ struct SettingsView: View {
 
     private func download(_ model: String) {
         downloadProgress[model] = 0
+        downloadError = nil
         Task {
             do {
                 let manager = whisperManager
@@ -114,7 +121,7 @@ struct SettingsView: View {
                     Task { @MainActor in downloadProgress[model] = fraction }
                 }
             } catch {
-                claudeStatus = "Download failed: \(error.localizedDescription)"
+                downloadError = "Download failed: \(error.localizedDescription)"
             }
             downloadProgress[model] = nil
             refreshModels()
