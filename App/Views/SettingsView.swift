@@ -49,6 +49,7 @@ struct SettingsView: View {
             Section("AI Providers — API Keys") {
                 ForEach(ProviderID.allCases.filter(\.requiresAPIKey), id: \.self) { provider in
                     SecureField(provider.displayName, text: binding(for: provider))
+                        .onSubmit { persist(provider) }
                 }
                 Picker("Default provider", selection: $settings.defaultProvider) {
                     ForEach(ProviderID.allCases, id: \.self) { Text($0.displayName).tag($0) }
@@ -81,6 +82,11 @@ struct SettingsView: View {
                 keys[provider] = settings.apiKey(for: provider) ?? ""
             }
         }
+        .onDisappear {
+            for provider in ProviderID.allCases where provider.requiresAPIKey {
+                persist(provider)
+            }
+        }
     }
 
     private func binding(for provider: ProviderID) -> Binding<String> {
@@ -88,8 +94,11 @@ struct SettingsView: View {
             get: { keys[provider] ?? "" },
             set: { newValue in
                 keys[provider] = newValue
-                settings.setAPIKey(newValue, for: provider)
             })
+    }
+
+    private func persist(_ provider: ProviderID) {
+        settings.setAPIKey(keys[provider] ?? "", for: provider)
     }
 
     private func refreshModels() {
