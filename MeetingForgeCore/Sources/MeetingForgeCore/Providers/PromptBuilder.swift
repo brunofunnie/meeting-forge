@@ -45,7 +45,7 @@ public enum PromptBuilder {
         return (system, user)
     }
 
-    static func timestamp(_ seconds: TimeInterval) -> String {
+    public static func timestamp(_ seconds: TimeInterval) -> String {
         let total = Int(seconds)
         return String(format: "%02d:%02d", total / 60, total % 60)
     }

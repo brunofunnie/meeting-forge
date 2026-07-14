@@ -62,9 +62,3 @@ struct HistoryListView: View {
         }
     }
 }
-
-// TEMPORARY placeholder — replaced in Task 19.
-struct MeetingDetailView: View {
-    let meeting: Meeting
-    var body: some View { Text(meeting.title) }
-}
