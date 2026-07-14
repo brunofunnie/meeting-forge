@@ -13,7 +13,7 @@ public struct KeychainStore: Sendable {
     }
 
     public func set(_ value: String, account: String) throws {
-        try? delete(account: account)
+        try delete(account: account)
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
