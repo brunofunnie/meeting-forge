@@ -90,4 +90,14 @@ private final class NavigationWaiter: NSObject, WKNavigationDelegate {
         continuation?.resume(throwing: ExportError.pdfFailed(String(describing: error)))
         continuation = nil
     }
+
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        continuation?.resume(throwing: ExportError.pdfFailed(String(describing: error)))
+        continuation = nil
+    }
+
+    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        continuation?.resume(throwing: ExportError.pdfFailed("web content process terminated"))
+        continuation = nil
+    }
 }
