@@ -60,3 +60,26 @@ func makeWavFixture(seconds: Double, frequency: Double = 440, name: String) thro
         _ = try await AudioCombiner.combine(fileURLs: [junk], outputURL: out)
     }
 }
+
+@Test func failureLeavesExistingOutputUntouched() async throws {
+    let out = FileManager.default.temporaryDirectory
+        .appendingPathComponent("mf-keep-\(UUID().uuidString).m4a")
+    try Data("precious".utf8).write(to: out)
+    let junk = FileManager.default.temporaryDirectory
+        .appendingPathComponent("mf-junk2-\(UUID().uuidString).mp3")
+    try Data("not audio".utf8).write(to: junk)
+    await #expect(throws: AudioCombinerError.self) {
+        _ = try await AudioCombiner.combine(fileURLs: [junk], outputURL: out)
+    }
+    #expect(try Data(contentsOf: out) == Data("precious".utf8))
+}
+
+@Test func successOverwritesExistingOutput() async throws {
+    let a = try makeWavFixture(seconds: 1.0, name: "ovw")
+    let out = FileManager.default.temporaryDirectory
+        .appendingPathComponent("mf-ovw-\(UUID().uuidString).m4a")
+    try Data("old".utf8).write(to: out)
+    _ = try await AudioCombiner.combine(fileURLs: [a], outputURL: out)
+    let asset = AVURLAsset(url: out)
+    #expect(try await asset.load(.duration).seconds > 0.5)
+}

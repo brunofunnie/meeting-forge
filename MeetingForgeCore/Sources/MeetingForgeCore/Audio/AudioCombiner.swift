@@ -41,13 +41,22 @@ public enum AudioCombiner {
             cursor = CMTimeAdd(cursor, duration)
         }
 
-        try? FileManager.default.removeItem(at: outputURL)
+        // Export atomically: write to a temp file next to outputURL and only move it
+        // into place on success, so a failed export never destroys a previous output.
+        let tmpURL = outputURL.deletingLastPathComponent()
+            .appendingPathComponent(".mf-export-\(UUID().uuidString).m4a")
         guard let export = AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetAppleM4A) else {
             throw AudioCombinerError.exportFailed("cannot create export session")
         }
         do {
-            try await export.export(to: outputURL, as: .m4a)
+            try await export.export(to: tmpURL, as: .m4a)
+            if FileManager.default.fileExists(atPath: outputURL.path) {
+                _ = try FileManager.default.replaceItemAt(outputURL, withItemAt: tmpURL)
+            } else {
+                try FileManager.default.moveItem(at: tmpURL, to: outputURL)
+            }
         } catch {
+            try? FileManager.default.removeItem(at: tmpURL)
             throw AudioCombinerError.exportFailed(String(describing: error))
         }
         return cursor.seconds
