@@ -40,6 +40,11 @@ public struct OpenAIProvider: MinutesProvider {
                         guard let payload = SSEParser.payload(fromLine: line),
                               let json = try? JSONSerialization.jsonObject(with: Data(payload.utf8)) as? [String: Any]
                         else { continue }
+                        if let errorDict = json["error"] as? [String: Any] {
+                            let message = errorDict["message"] as? String ?? payload
+                            continuation.finish(throwing: ProviderError.malformedResponse("stream error: \(message)"))
+                            return
+                        }
                         if let choices = json["choices"] as? [[String: Any]],
                            let delta = choices.first?["delta"] as? [String: Any],
                            let content = delta["content"] as? String, !content.isEmpty {

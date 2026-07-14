@@ -32,6 +32,18 @@ private let request = MinutesRequest(
     #expect(body["max_tokens"] as? Int == 8192)
 }
 
+@Test func anthropicMidStreamErrorThrows() async throws {
+    let transport = MockTransport(bodyLines: [
+        "event: content_block_delta",
+        #"data: {"type":"content_block_delta","delta":{"type":"text_delta","text":"partial"}}"#,
+        "event: error",
+        #"data: {"type":"error","error":{"type":"overloaded_error","message":"Overloaded"}}"#,
+    ])
+    let provider = AnthropicProvider(transport: transport)
+    let stream = try await provider.generate(request)
+    await #expect(throws: ProviderError.self) { _ = try await drain(stream) }
+}
+
 @Test func anthropicListsModels() async throws {
     let transport = MockTransport(bodyLines: [
         "{\"data\":[{\"id\":\"claude-sonnet-4-5\"},{\"id\":\"claude-haiku-4-5\"}]}"

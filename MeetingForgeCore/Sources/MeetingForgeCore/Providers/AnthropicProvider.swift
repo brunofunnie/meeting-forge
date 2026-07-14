@@ -57,6 +57,10 @@ public struct AnthropicProvider: MinutesProvider {
                                let output = u["output_tokens"] as? Int {
                                 outputTokens = output
                             }
+                        case "error":
+                            let message = (json["error"] as? [String: Any])?["message"] as? String ?? payload
+                            continuation.finish(throwing: ProviderError.malformedResponse("stream error: \(message)"))
+                            return
                         default:
                             break
                         }

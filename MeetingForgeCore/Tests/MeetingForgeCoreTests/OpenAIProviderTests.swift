@@ -39,6 +39,16 @@ private let request = MinutesRequest(
     await #expect(throws: ProviderError.self) { _ = try await drain(stream) }
 }
 
+@Test func openAIMidStreamErrorThrows() async throws {
+    let transport = MockTransport(bodyLines: [
+        #"data: {"choices":[{"delta":{"content":"partial"}}]}"#,
+        #"data: {"error":{"message":"server_error mid-stream"}}"#,
+    ])
+    let provider = OpenAIProvider(transport: transport)
+    let stream = try await provider.generate(request)
+    await #expect(throws: ProviderError.self) { _ = try await drain(stream) }
+}
+
 @Test func openAIListsModels() async throws {
     let transport = MockTransport(bodyLines: [
         "{\"data\":[{\"id\":\"gpt-5.2\"},{\"id\":\"gpt-5-mini\"},{\"id\":\"whisper-1\"}]}"
