@@ -27,10 +27,12 @@ public struct PipelineConfig: Sendable {
     public var speakerNames: [String: String]
     public var model: String
     public var apiKey: String?
+    public var outputLanguage: MinutesLanguage
 
     public init(sourceFiles: [URL], workDirectory: URL, language: MeetingLanguage,
                 diarize: Bool, template: TemplateContent,
-                speakerNames: [String: String] = [:], model: String, apiKey: String? = nil) {
+                speakerNames: [String: String] = [:], model: String, apiKey: String? = nil,
+                outputLanguage: MinutesLanguage = .matchTranscript) {
         self.sourceFiles = sourceFiles
         self.workDirectory = workDirectory
         self.language = language
@@ -39,6 +41,7 @@ public struct PipelineConfig: Sendable {
         self.speakerNames = speakerNames
         self.model = model
         self.apiKey = apiKey
+        self.outputLanguage = outputLanguage
     }
 }
 
@@ -137,7 +140,8 @@ public struct PipelineCoordinator: Sendable {
         continuation.yield(.stageChanged(.generating))
         let (system, user) = PromptBuilder.build(
             template: config.template, transcript: segments,
-            speakerNames: config.speakerNames, diarized: diarized)
+            speakerNames: config.speakerNames, diarized: diarized,
+            outputLanguage: config.outputLanguage)
         let request = MinutesRequest(
             systemPrompt: system, userPrompt: user, model: config.model, apiKey: config.apiKey)
         let started = ContinuousClock.now

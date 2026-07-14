@@ -11,6 +11,7 @@ final class NewMeetingFormModel {
     var title = ""
     var files: [URL] = []
     var language: MeetingLanguage = .auto
+    var minutesLanguage: MinutesLanguage = .matchTranscript
     var diarize = false
     var selectedTemplateName: String?
     var provider: ProviderID = .anthropic
@@ -34,6 +35,9 @@ struct NewMeetingView: View {
                 TextField("Title", text: $form.title, prompt: Text("e.g. Sprint Planning 14/07"))
                 Picker("Language", selection: $form.language) {
                     ForEach(MeetingLanguage.allCases, id: \.self) { Text($0.displayName).tag($0) }
+                }
+                Picker("Minutes language", selection: $form.minutesLanguage) {
+                    ForEach(MinutesLanguage.allCases, id: \.self) { Text($0.displayName).tag($0) }
                 }
                 Toggle("Speaker diarization", isOn: $form.diarize)
             }
@@ -140,6 +144,7 @@ struct NewMeetingView: View {
             : form.title
         form.runViewModel.start(
             title: meetingTitle, files: form.files, language: form.language, diarize: form.diarize,
+            minutesLanguage: form.minutesLanguage,
             template: template, provider: form.provider, model: form.model,
             settings: settings, context: context)
     }

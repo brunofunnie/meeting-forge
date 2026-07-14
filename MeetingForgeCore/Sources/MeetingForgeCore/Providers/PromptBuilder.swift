@@ -17,16 +17,25 @@ public enum PromptBuilder {
         template: TemplateContent,
         transcript: [TranscriptSegment],
         speakerNames: [String: String],
-        diarized: Bool
+        diarized: Bool,
+        outputLanguage: MinutesLanguage = .matchTranscript
     ) -> (system: String, user: String) {
         let sectionList = template.sections.map { "- \($0)" }.joined(separator: "\n")
+        let languageRule = switch outputLanguage {
+        case .matchTranscript:
+            "Write the minutes in the same language as the transcript."
+        case .portugueseBR:
+            "Write the minutes in Brazilian Portuguese (pt-BR), even if the transcript is in another language."
+        case .english:
+            "Write the minutes in English, even if the transcript is in another language."
+        }
         let system = """
         \(template.systemPrompt)
 
         Produce meeting minutes in Markdown with exactly these sections (use ## headings, keep this order, omit a section only if truly empty):
         \(sectionList)
 
-        Write the minutes in the same language as the transcript.
+        \(languageRule)
         """
 
         let lines = transcript.map { segment -> String in

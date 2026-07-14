@@ -33,3 +33,25 @@ let template = TemplateContent(
     #expect(user.contains("[02:05] next topic"))
     #expect(!user.contains("S1"))
 }
+
+@Test func explicitPortugueseOutputOverridesTranscriptLanguage() {
+    let (system, _) = PromptBuilder.build(
+        template: template, transcript: [], speakerNames: [:], diarized: false,
+        outputLanguage: .portugueseBR)
+    #expect(system.contains("Brazilian Portuguese"))
+    #expect(!system.contains("same language as the transcript"))
+}
+
+@Test func explicitEnglishOutputOverridesTranscriptLanguage() {
+    let (system, _) = PromptBuilder.build(
+        template: template, transcript: [], speakerNames: [:], diarized: false,
+        outputLanguage: .english)
+    #expect(system.contains("Write the minutes in English"))
+    #expect(!system.contains("same language as the transcript"))
+}
+
+@Test func defaultOutputLanguageMatchesTranscript() {
+    let (system, _) = PromptBuilder.build(
+        template: template, transcript: [], speakerNames: [:], diarized: false)
+    #expect(system.contains("same language as the transcript"))
+}

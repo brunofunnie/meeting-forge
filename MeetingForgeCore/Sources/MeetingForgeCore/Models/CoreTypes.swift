@@ -27,6 +27,21 @@ public enum MeetingLanguage: String, Codable, CaseIterable, Sendable {
     }
 }
 
+/// Language the AI writes the minutes in — independent of the transcription language.
+public enum MinutesLanguage: String, Codable, CaseIterable, Sendable {
+    case matchTranscript = "match"
+    case portugueseBR = "pt-BR"
+    case english = "en"
+
+    public var displayName: String {
+        switch self {
+        case .matchTranscript: "Same as audio"
+        case .portugueseBR: "Português (BR)"
+        case .english: "English"
+        }
+    }
+}
+
 public struct TranscriptSegment: Codable, Equatable, Sendable {
     public var start: TimeInterval
     public var end: TimeInterval

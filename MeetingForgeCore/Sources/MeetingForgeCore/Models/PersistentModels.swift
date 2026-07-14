@@ -13,6 +13,8 @@ public final class Meeting {
     /// UUID of this meeting's folder under Application Support/MeetingForge/audio.
     /// Optional so existing stores migrate lightweight (nil for pre-existing meetings).
     public var audioFolderUUID: String?
+    /// Minutes output language chosen at run time; optional for lightweight migration.
+    public var minutesLanguageRaw: String?
 
     @Relationship(deleteRule: .cascade) public var transcript: Transcript?
     @Relationship(deleteRule: .cascade) public var minutesRuns: [MinutesRun]
@@ -20,6 +22,11 @@ public final class Meeting {
     public var language: MeetingLanguage {
         get { MeetingLanguage(rawValue: languageRaw) ?? .auto }
         set { languageRaw = newValue.rawValue }
+    }
+
+    public var minutesLanguage: MinutesLanguage {
+        get { minutesLanguageRaw.flatMap(MinutesLanguage.init(rawValue:)) ?? .matchTranscript }
+        set { minutesLanguageRaw = newValue.rawValue }
     }
 
     public var status: MeetingStatus {

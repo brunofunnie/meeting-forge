@@ -23,12 +23,14 @@ final class MeetingRunViewModel {
 
     func start(
         title: String, files: [URL], language: MeetingLanguage, diarize: Bool,
+        minutesLanguage: MinutesLanguage,
         template: MeetingTemplate, provider: ProviderID, model: String,
         settings: SettingsStore, context: ModelContext
     ) {
         let meeting = Meeting(title: title, language: language)
         let meetingUUID = UUID()
         meeting.audioFolderUUID = meetingUUID.uuidString
+        meeting.minutesLanguage = minutesLanguage
         let audioDir = AppPaths.audioDirectory(meetingID: meetingUUID)
 
         // Copy sources into the meeting folder so history owns its audio.
@@ -61,7 +63,8 @@ final class MeetingRunViewModel {
             template: TemplateContent(
                 name: template.name, systemPrompt: template.systemPrompt, sections: template.sections),
             model: model,
-            apiKey: settings.apiKey(for: provider))
+            apiKey: settings.apiKey(for: provider),
+            outputLanguage: minutesLanguage)
         let coordinator = PipelineCoordinator(
             engine: settings.makeEngine(),
             diarizer: FluidAudioDiarizer(),
@@ -133,7 +136,8 @@ final class MeetingRunViewModel {
             template: TemplateContent(
                 name: template.name, systemPrompt: template.systemPrompt, sections: template.sections),
             speakerNames: (try? transcript.speakerNames()) ?? [:],
-            model: model, apiKey: settings.apiKey(for: provider))
+            model: model, apiKey: settings.apiKey(for: provider),
+            outputLanguage: meeting.minutesLanguage)
         let coordinator = PipelineCoordinator(
             engine: settings.makeEngine(), diarizer: FluidAudioDiarizer(),
             provider: settings.makeProvider(provider))
