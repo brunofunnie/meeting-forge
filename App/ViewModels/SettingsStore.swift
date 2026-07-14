@@ -65,6 +65,12 @@ final class SettingsStore {
         return ClaudeCodeProvider.detectExecutable()
     }
 
+    /// Provider is usable now: has an API key, or (Claude Code) the CLI is present.
+    func isAvailable(_ id: ProviderID) -> Bool {
+        if id == .claudeCode { return claudeExecutableURL() != nil }
+        return !(apiKey(for: id) ?? "").isEmpty
+    }
+
     func makeProvider(_ id: ProviderID) -> MinutesProvider {
         switch id {
         case .openAI: OpenAIProvider()

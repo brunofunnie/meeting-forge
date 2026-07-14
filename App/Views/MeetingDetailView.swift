@@ -224,7 +224,16 @@ struct RegenerateSheet: View {
     var body: some View {
         Form {
             Picker("Provider", selection: $provider) {
-                ForEach(ProviderID.allCases, id: \.self) { Text($0.displayName).tag($0) }
+                ForEach(ProviderID.allCases, id: \.self) { id in
+                    if settings.isAvailable(id) {
+                        Text(id.displayName).tag(id)
+                    } else {
+                        Text("\(id.displayName) — \(id == .claudeCode ? "CLI not found" : "no API key")")
+                            .foregroundStyle(.secondary)
+                            .tag(id)
+                            .selectionDisabled()
+                    }
+                }
             }
             TextField("Model", text: $model)
             Picker("Template", selection: $templateName) {
@@ -240,7 +249,7 @@ struct RegenerateSheet: View {
                         dismiss()
                     }
                 }
-                .disabled(model.isEmpty || templateName == nil)
+                .disabled(model.isEmpty || templateName == nil || !settings.isAvailable(provider))
             }
         }
         .padding()

@@ -48,7 +48,16 @@ struct NewMeetingView: View {
                     }
                 }
                 Picker("Provider", selection: $provider) {
-                    ForEach(ProviderID.allCases, id: \.self) { Text($0.displayName).tag($0) }
+                    ForEach(ProviderID.allCases, id: \.self) { id in
+                        if settings.isAvailable(id) {
+                            Text(id.displayName).tag(id)
+                        } else {
+                            Text("\(id.displayName) — \(id == .claudeCode ? "CLI not found" : "no API key")")
+                                .foregroundStyle(.secondary)
+                                .tag(id)
+                                .selectionDisabled()
+                        }
+                    }
                 }
                 HStack {
                     Picker("Model", selection: $model) {
@@ -68,7 +77,7 @@ struct NewMeetingView: View {
                 Button("Process meeting") { start() }
                     .keyboardShortcut(.defaultAction)
                     .disabled(files.isEmpty || model.isEmpty || selectedTemplateName == nil
-                              || runViewModel.isRunning)
+                              || runViewModel.isRunning || !settings.isAvailable(provider))
                 RunProgressView(viewModel: runViewModel)
             }
         }
