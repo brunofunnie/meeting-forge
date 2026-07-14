@@ -47,7 +47,7 @@ MeetingForge supports five AI providers for minutes generation. Enter API keys i
 | Ollama Cloud | https://ollama.com (API key page in your account) | Cloud-hosted models, not a local Ollama install |
 | Claude Code CLI | — | No API key. Requires the `claude` CLI installed locally; MeetingForge detects it and shells out to it. Cost is whatever the CLI itself reports. |
 
-Settings also lets you set a default provider/model pair, edit the per-model price table used for cost estimates, and refresh each provider's live model list.
+Settings also lets you set a default provider/model pair and refresh each provider's live model list. Cost estimates use a built-in per-model price table (Claude Code reports its own cost directly).
 
 ## Transcription
 

@@ -76,9 +76,6 @@ struct SettingsView: View {
                 }
             }
 
-            Section("Model prices (USD per 1M tokens)") {
-                PriceTableEditor(overrides: $settings.priceOverrides)
-            }
         }
         .formStyle(.grouped)
         .navigationTitle("Settings")
@@ -125,36 +122,6 @@ struct SettingsView: View {
             }
             downloadProgress[model] = nil
             refreshModels()
-        }
-    }
-}
-
-struct PriceTableEditor: View {
-    @Binding var overrides: [String: ModelPrice]
-    @State private var newModel = ""
-    @State private var newInput = ""
-    @State private var newOutput = ""
-
-    var body: some View {
-        ForEach(CostCalculator.defaultPrices.keys.sorted(), id: \.self) { key in
-            let price = overrides[key] ?? CostCalculator.defaultPrices[key]!
-            HStack {
-                Text(key)
-                Spacer()
-                Text("in \(price.inputPerMTok, specifier: "%.2f") / out \(price.outputPerMTok, specifier: "%.2f")")
-                    .foregroundStyle(overrides[key] == nil ? .secondary : .primary)
-            }.font(.caption)
-        }
-        HStack {
-            TextField("model prefix", text: $newModel)
-            TextField("in $/MTok", text: $newInput).frame(width: 80)
-            TextField("out $/MTok", text: $newOutput).frame(width: 80)
-            Button("Set") {
-                if let input = Double(newInput), let output = Double(newOutput), !newModel.isEmpty {
-                    overrides[newModel] = ModelPrice(inputPerMTok: input, outputPerMTok: output)
-                    newModel = ""; newInput = ""; newOutput = ""
-                }
-            }
         }
     }
 }
