@@ -63,6 +63,9 @@ public struct ClaudeCodeProvider: MinutesProvider {
                     process.standardError = stderrPipe
                     try process.run()
 
+                    // A child that exits before draining stdin would otherwise raise SIGPIPE and kill the app.
+                    _ = fcntl(stdinPipe.fileHandleForWriting.fileDescriptor, F_SETNOSIGPIPE, 1)
+
                     // Pipe buffers are ~64KB; writing stdin or draining either output
                     // sequentially deadlocks once any buffer fills. All three run concurrently.
                     let stdinData = Data(prompt.utf8)
