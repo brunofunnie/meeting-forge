@@ -61,15 +61,17 @@ func fixtureConfig(diarize: Bool, files: Int = 1) throws -> PipelineConfig {
     for event in events {
         switch event {
         case .combined: sawCombined = true
-        case .transcribed(let segs, _):
+        case .transcribed(let segs, let wallTime):
             sawTranscribed = true
             #expect(segs.first?.text == "hello world")
+            #expect(wallTime >= 0)
         case .diarized(let segs):
             sawDiarized = true
             #expect(segs.first?.speaker == "S1")
         case .minutesDelta(let d): markdown += d
-        case .minutesCompleted(let md, let usage, _):
+        case .minutesCompleted(let md, let usage, let latency):
             #expect(md == "# Minutes body")
+            #expect(latency > 0)
             finalUsage = usage
         case .stageChanged: break
         }
@@ -96,6 +98,40 @@ func fixtureConfig(diarize: Bool, files: Int = 1) throws -> PipelineConfig {
         Issue.record("expected throw")
     } catch let error as PipelineError {
         #expect(error.stage == .transcribing)
+    }
+}
+
+@Test func diarizationFailureCarriesStage() async throws {
+    struct FailingDiarizer: Diarizer {
+        func speakerTurns(fileURL: URL) async throws -> [SpeakerTurn] {
+            throw DiarizationError.failed("no models")
+        }
+    }
+    let coordinator = PipelineCoordinator(
+        engine: FakeEngine(), diarizer: FailingDiarizer(), provider: FakeProvider())
+    do {
+        for try await _ in coordinator.run(try fixtureConfig(diarize: true)) {}
+        Issue.record("expected throw")
+    } catch let error as PipelineError {
+        #expect(error.stage == .diarizing)
+    }
+}
+
+@Test func providerFailureCarriesGeneratingStage() async throws {
+    struct FailingProvider: MinutesProvider {
+        let id: ProviderID = .openAI
+        func generate(_ request: MinutesRequest) async throws -> AsyncThrowingStream<MinutesEvent, Error> {
+            throw ProviderError.http(status: 500, message: "boom")
+        }
+        func listModels(apiKey: String?) async throws -> [String] { [] }
+    }
+    let coordinator = PipelineCoordinator(
+        engine: FakeEngine(), diarizer: FakeDiarizer(), provider: FailingProvider())
+    do {
+        for try await _ in coordinator.run(try fixtureConfig(diarize: false)) {}
+        Issue.record("expected throw")
+    } catch let error as PipelineError {
+        #expect(error.stage == .generating)
     }
 }
 

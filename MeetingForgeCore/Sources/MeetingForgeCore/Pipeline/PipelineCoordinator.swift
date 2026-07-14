@@ -53,6 +53,12 @@ public struct PipelineCoordinator: Sendable {
         self.provider = provider
     }
 
+    private func elapsedSeconds(since start: ContinuousClock.Instant) -> TimeInterval {
+        let duration = ContinuousClock.now - start
+        return Double(duration.components.seconds)
+             + Double(duration.components.attoseconds) / 1e18
+    }
+
     public func run(_ config: PipelineConfig) -> AsyncThrowingStream<PipelineEvent, Error> {
         AsyncThrowingStream { continuation in
             let task = Task {
@@ -80,7 +86,7 @@ public struct PipelineCoordinator: Sendable {
                     } catch {
                         throw PipelineError(stage: .transcribing, underlying: error)
                     }
-                    let wallTime = Double((ContinuousClock.now - started).components.seconds)
+                    let wallTime = elapsedSeconds(since: started)
                     continuation.yield(.transcribed(segments: segments, wallTime: wallTime))
 
                     // 3. Diarize (optional)
@@ -150,7 +156,7 @@ public struct PipelineCoordinator: Sendable {
         } catch {
             throw PipelineError(stage: .generating, underlying: error)
         }
-        let latency = Double((ContinuousClock.now - started).components.seconds)
+        let latency = elapsedSeconds(since: started)
         continuation.yield(.minutesCompleted(markdown: markdown, usage: usage, latency: latency))
     }
 }
