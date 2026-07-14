@@ -5,6 +5,7 @@ import MeetingForgeCore
 @main
 struct MeetingForgeApp: App {
     let container: ModelContainer
+    @State private var settings = SettingsStore()
 
     init() {
         do {
@@ -19,6 +20,7 @@ struct MeetingForgeApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environment(settings)
         }
         .modelContainer(container)
     }

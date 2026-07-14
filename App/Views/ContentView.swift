@@ -33,7 +33,6 @@ struct ContentView: View {
     }
 }
 
-// TEMPORARY placeholders — removed as Tasks 18-21 land their real views.
+// TEMPORARY placeholders — removed as Tasks 19-21 land their real views.
 struct NewMeetingView: View { var body: some View { Text("New Meeting") } }
 struct TemplateListView: View { var body: some View { Text("Templates") } }
-struct SettingsView: View { var body: some View { Text("Settings") } }
