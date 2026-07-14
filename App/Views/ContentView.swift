@@ -32,6 +32,3 @@ struct ContentView: View {
         .frame(minWidth: 980, minHeight: 640)
     }
 }
-
-// TEMPORARY placeholder — removed as Tasks 20-21 land their real views.
-struct TemplateListView: View { var body: some View { Text("Templates") } }
