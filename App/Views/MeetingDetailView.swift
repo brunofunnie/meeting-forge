@@ -105,6 +105,7 @@ struct MeetingDetailView: View {
                 .font(.caption).foregroundStyle(.secondary)
             if let path = meeting.combinedAudioPath {
                 AudioPlayerView(url: URL(fileURLWithPath: path))
+                    .frame(height: 60)
                 Button("Show in Finder") {
                     NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
                 }
@@ -197,15 +198,30 @@ struct TranscriptTabView: View {
     }
 }
 
-struct AudioPlayerView: View {
+// Wraps AppKit's AVPlayerView directly. SwiftUI's VideoPlayer (_AVKit_SwiftUI shim)
+// aborts in generic-metadata instantiation on macOS 26.5 when created inside a
+// TabView tab switch — bypassing the shim avoids the crash.
+struct AudioPlayerView: NSViewRepresentable {
     let url: URL
-    @State private var player: AVPlayer?
 
-    var body: some View {
-        VideoPlayer(player: player)
-            .frame(height: 60)
-            .onAppear { player = AVPlayer(url: url) }
-            .onDisappear { player?.pause() }
+    func makeNSView(context: Context) -> AVPlayerView {
+        let view = AVPlayerView()
+        view.controlsStyle = .inline
+        view.player = AVPlayer(url: url)
+        return view
+    }
+
+    func updateNSView(_ nsView: AVPlayerView, context: Context) {
+        let currentURL = (nsView.player?.currentItem?.asset as? AVURLAsset)?.url
+        if currentURL != url {
+            nsView.player?.pause()
+            nsView.player = AVPlayer(url: url)
+        }
+    }
+
+    static func dismantleNSView(_ nsView: AVPlayerView, coordinator: ()) {
+        nsView.player?.pause()
+        nsView.player = nil
     }
 }
 
