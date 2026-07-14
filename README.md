@@ -39,7 +39,7 @@ Settings also lets you set a default provider/model pair, edit the per-model pri
 ## Transcription
 
 - **Apple SpeechAnalyzer / SpeechTranscriber** (default): on-device, built into macOS 26, no model downloads, supports pt-BR and en out of the box.
-- **WhisperKit** (optional): CoreML Whisper, switchable in Settings. Better accuracy on noisy or accented audio. Models (base, small, medium, large-v3-turbo, etc.) are downloaded on demand from the Settings model manager; a run won't start on WhisperKit until a model is downloaded.
+- **WhisperKit** (optional): CoreML Whisper, switchable in Settings. Better accuracy on noisy or accented audio. Models (base, small, large-v3, large-v3-turbo) are downloaded on demand from the Settings model manager; a run won't start on WhisperKit until a model is downloaded.
 
 Transcription language is selectable per run: Portuguese (pt-BR), English, or auto-detect between the two. Minutes are generated in the same language as the transcript.
 
