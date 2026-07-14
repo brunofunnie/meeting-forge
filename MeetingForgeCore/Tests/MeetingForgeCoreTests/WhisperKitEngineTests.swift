@@ -30,6 +30,15 @@ import Foundation
     }
 }
 
+@Test func prepareRefusesWithoutDownloadedModel() async throws {
+    let dir = FileManager.default.temporaryDirectory
+        .appendingPathComponent("mf-wk-\(UUID().uuidString)")
+    let engine = WhisperKitEngine(modelName: "openai_whisper-base", modelsDirectory: dir)
+    await #expect(throws: TranscriptionError.self) {
+        try await engine.prepare(language: .english)
+    }
+}
+
 @Test func recommendedModelsNonEmpty() {
     #expect(WhisperKitModelManager.recommendedModels.contains("openai_whisper-base"))
 }
