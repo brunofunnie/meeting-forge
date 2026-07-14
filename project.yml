@@ -1,0 +1,27 @@
+name: MeetingForge
+options:
+  bundleIdPrefix: com.funnietech
+  deploymentTarget:
+    macOS: "26.0"
+packages:
+  MeetingForgeCore:
+    path: MeetingForgeCore
+targets:
+  MeetingForge:
+    type: application
+    platform: macOS
+    sources: [App]
+    dependencies:
+      - package: MeetingForgeCore
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: MeetingForge
+        NSSpeechRecognitionUsageDescription: "MeetingForge transcribes your meeting audio on-device."
+        LSMinimumSystemVersion: "26.0"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.funnietech.meetingforge
+        ENABLE_APP_SANDBOX: NO
+        ENABLE_HARDENED_RUNTIME: YES
+        SWIFT_VERSION: "6.0"
