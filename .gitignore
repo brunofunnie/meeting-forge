@@ -2,3 +2,5 @@
 *.xcodeproj
 .build/
 DerivedData/
+build/
+dist/

@@ -22,6 +22,19 @@ Run the core test suite (business logic, providers, pipeline — no Xcode projec
 swift test --package-path MeetingForgeCore
 ```
 
+## Package (.app + DMG)
+
+```bash
+scripts/package.sh              # → dist/MeetingForge.app + dist/MeetingForge-<version>.dmg
+scripts/package.sh 1.0.0        # explicit version label for the DMG filename
+```
+
+Signing is ad-hoc by default (fine on your own Mac). To distribute to other Macs, set a real identity and notarize afterwards:
+
+```bash
+CODESIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" scripts/package.sh 1.0.0
+```
+
 ## Provider setup
 
 MeetingForge supports five AI providers for minutes generation. Enter API keys in the app's **Settings** screen — they're stored in the macOS Keychain, never in plain files or SwiftData.
