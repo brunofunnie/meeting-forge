@@ -62,6 +62,16 @@ struct SettingsView: View {
                 }
             }
 
+            Section("Ollama (local)") {
+                TextField("Server URL", text: $settings.ollamaLocalURL,
+                          prompt: Text(SettingsStore.defaultOllamaLocalURL))
+                SecureField("API key (optional)", text: binding(for: .ollamaLocal))
+                    .onSubmit { persist(.ollamaLocal) }
+                Text("Key is only sent when set — a stock local install needs none.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             Section("Claude Code") {
                 TextField("Executable path (empty = auto-detect)",
                           text: Binding(
@@ -81,15 +91,21 @@ struct SettingsView: View {
         .navigationTitle("Settings")
         .onAppear {
             refreshModels()
-            for provider in ProviderID.allCases where provider.requiresAPIKey {
+            for provider in keyedProviders {
                 keys[provider] = settings.apiKey(for: provider) ?? ""
             }
         }
         .onDisappear {
-            for provider in ProviderID.allCases where provider.requiresAPIKey {
+            for provider in keyedProviders {
                 persist(provider)
             }
         }
+    }
+
+    /// Providers whose key lives in the local `keys` buffer: the mandatory-key
+    /// ones plus Ollama local, whose key is optional.
+    private var keyedProviders: [ProviderID] {
+        ProviderID.allCases.filter { $0.requiresAPIKey || $0 == .ollamaLocal }
     }
 
     private func binding(for provider: ProviderID) -> Binding<String> {

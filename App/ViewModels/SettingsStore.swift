@@ -22,12 +22,19 @@ final class SettingsStore {
     var priceOverrides: [String: ModelPrice] {
         didSet { defaults.set(try? JSONEncoder().encode(priceOverrides), forKey: "price-overrides") }
     }
+    /// Base URL of the local Ollama server (hostname + port).
+    var ollamaLocalURL: String {
+        didSet { defaults.set(ollamaLocalURL, forKey: "ollama-local-url") }
+    }
+
+    static let defaultOllamaLocalURL = "http://localhost:11434"
 
     init() {
         engineID = TranscriptionEngineID(rawValue: defaults.string(forKey: "engine") ?? "") ?? .appleSpeech
         whisperModel = defaults.string(forKey: "whisper-model") ?? "openai_whisper-base"
         defaultProvider = ProviderID(rawValue: defaults.string(forKey: "default-provider") ?? "") ?? .anthropic
         claudeExecutablePath = defaults.string(forKey: "claude-path")
+        ollamaLocalURL = defaults.string(forKey: "ollama-local-url") ?? Self.defaultOllamaLocalURL
         if let data = defaults.data(forKey: "price-overrides"),
            let decoded = try? JSONDecoder().decode([String: ModelPrice].self, from: data) {
             priceOverrides = decoded
@@ -80,7 +87,10 @@ final class SettingsStore {
         case .anthropic: AnthropicProvider()
         case .gemini: GeminiProvider()
         case .ollamaCloud: OllamaCloudProvider()
-        case .ollamaLocal: OllamaCloudProvider.local()
+        case .ollamaLocal: OllamaCloudProvider(
+            id: .ollamaLocal,
+            baseURL: resolvedOllamaLocalURL(),
+            requiresAuth: false)
         case .claudeCode: ClaudeCodeProvider(executableURL: claudeExecutableURL())
         }
     }
@@ -95,5 +105,15 @@ final class SettingsStore {
 
     func costCalculator() -> CostCalculator {
         CostCalculator(overrides: priceOverrides)
+    }
+
+    /// Parses the configured Ollama local URL, falling back to the default
+    /// when empty or unparseable.
+    func resolvedOllamaLocalURL() -> URL {
+        let trimmed = ollamaLocalURL.trimmingCharacters(in: .whitespaces)
+        if !trimmed.isEmpty, let url = URL(string: trimmed), url.scheme != nil {
+            return url
+        }
+        return URL(string: Self.defaultOllamaLocalURL)!
     }
 }
