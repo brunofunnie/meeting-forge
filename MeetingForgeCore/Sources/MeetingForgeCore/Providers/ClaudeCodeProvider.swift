@@ -105,7 +105,10 @@ public struct ClaudeCodeProvider: MinutesProvider {
                     continuation.finish(throwing: error)
                 }
             }
-            continuation.onTermination = { _ in task.cancel() }
+            continuation.onTermination = { _ in
+                task.cancel()
+                if box.process.isRunning { box.process.terminate() }
+            }
         }
     }
 
