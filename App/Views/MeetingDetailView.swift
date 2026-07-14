@@ -61,6 +61,9 @@ struct MeetingDetailView: View {
             Button("OK") { exportError = nil }
         } message: { Text(exportError ?? "") }
         .onAppear { selectedRunIndex = max(0, sortedRuns.count - 1) }
+        .onChange(of: meeting.minutesRuns.count) {
+            selectedRunIndex = max(0, sortedRuns.count - 1)
+        }
     }
 
     private var minutesTab: some View {
@@ -74,7 +77,7 @@ struct MeetingDetailView: View {
                 }
                 .pickerStyle(.menu)
             }
-            if case .running = runViewModel.state {
+            if runViewModel.state != .idle {
                 RunProgressView(viewModel: runViewModel)
             }
             ScrollView {

@@ -35,13 +35,11 @@ struct HistoryListView: View {
                     .onDelete { indexSet in
                         for index in indexSet {
                             let meeting = meetings[index]
-                            // NOTE: best-effort audio cleanup — Meeting has no stored UUID yet,
-                            // so we approximate the folder name from the persistent model ID's
-                            // hash. Known-imperfect; Task 18 fixes this once meetings carry a
-                            // proper folder UUID via combinedAudioPath.
-                            try? FileManager.default.removeItem(
-                                at: AppPaths.root.appendingPathComponent("audio")
-                                    .appendingPathComponent(meeting.persistentModelID.hashValue.description))
+                            if let uuid = meeting.audioFolderUUID {
+                                try? FileManager.default.removeItem(
+                                    at: AppPaths.root.appendingPathComponent("audio")
+                                        .appendingPathComponent(uuid))
+                            }
                             context.delete(meeting)
                         }
                         try? context.save()

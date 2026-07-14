@@ -16,6 +16,11 @@ final class MeetingRunViewModel {
     var liveMarkdown = ""
     var meetingID: PersistentIdentifier?
 
+    var isRunning: Bool {
+        if case .running = state { return true }
+        return false
+    }
+
     func start(
         title: String, files: [URL], language: MeetingLanguage, diarize: Bool,
         template: MeetingTemplate, provider: ProviderID, model: String,
@@ -23,12 +28,16 @@ final class MeetingRunViewModel {
     ) {
         let meeting = Meeting(title: title, language: language)
         let meetingUUID = UUID()
+        meeting.audioFolderUUID = meetingUUID.uuidString
         let audioDir = AppPaths.audioDirectory(meetingID: meetingUUID)
 
         // Copy sources into the meeting folder so history owns its audio.
+        // Index-prefixed names keep list order and avoid clashes between
+        // same-named files from different folders.
         var copiedFiles: [URL] = []
-        for file in files {
-            let dest = audioDir.appendingPathComponent("source").appendingPathComponent(file.lastPathComponent)
+        for (index, file) in files.enumerated() {
+            let dest = audioDir.appendingPathComponent("source")
+                .appendingPathComponent(String(format: "%02d-%@", index, file.lastPathComponent))
             try? FileManager.default.removeItem(at: dest)
             do {
                 try FileManager.default.copyItem(at: file, to: dest)
@@ -81,6 +90,7 @@ final class MeetingRunViewModel {
                         try meeting.transcript?.setSegments(segments)
                     case .minutesDelta(let delta):
                         liveMarkdown += delta
+                        continue // transient UI state only — nothing to persist
                     case .minutesCompleted(let markdown, let usage, let latency):
                         let run = MinutesRun(
                             provider: provider, modelName: model, templateName: template.name,
@@ -153,7 +163,9 @@ final class MeetingRunViewModel {
                 try? context.save()
                 state = .done
             } catch {
-                meeting.status = .done // transcript still valid; only this run failed
+                // Transcript still valid; only this run failed. Keep .done when
+                // earlier runs exist, otherwise mark the meeting failed.
+                meeting.status = meeting.minutesRuns.isEmpty ? .failed : .done
                 try? context.save()
                 state = .failed(stage: .generating, message: describe(error))
             }

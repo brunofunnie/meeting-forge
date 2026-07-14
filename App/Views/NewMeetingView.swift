@@ -68,7 +68,7 @@ struct NewMeetingView: View {
                 Button("Process meeting") { start() }
                     .keyboardShortcut(.defaultAction)
                     .disabled(files.isEmpty || model.isEmpty || selectedTemplateName == nil
-                              || (runViewModel.state != .idle && runViewModel.state != .done))
+                              || runViewModel.isRunning)
                 RunProgressView(viewModel: runViewModel)
             }
         }

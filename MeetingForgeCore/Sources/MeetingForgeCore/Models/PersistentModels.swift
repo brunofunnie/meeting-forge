@@ -10,6 +10,9 @@ public final class Meeting {
     public var durationSeconds: Double
     public var languageRaw: String
     public var statusRaw: String
+    /// UUID of this meeting's folder under Application Support/MeetingForge/audio.
+    /// Optional so existing stores migrate lightweight (nil for pre-existing meetings).
+    public var audioFolderUUID: String?
 
     @Relationship(deleteRule: .cascade) public var transcript: Transcript?
     @Relationship(deleteRule: .cascade) public var minutesRuns: [MinutesRun]
@@ -32,6 +35,7 @@ public final class Meeting {
         self.durationSeconds = 0
         self.languageRaw = language.rawValue
         self.statusRaw = MeetingStatus.pending.rawValue
+        self.audioFolderUUID = nil
         self.minutesRuns = []
     }
 }
