@@ -25,12 +25,19 @@ struct ContentView: View {
             }
             .navigationSplitViewColumnWidth(min: 180, ideal: 200)
         } detail: {
-            switch selection {
-            case .newMeeting, nil: NewMeetingView(form: newMeetingForm)
-            case .history: HistoryListView()
-            case .templates: TemplateListView()
-            case .settings: SettingsView()
+            // Explicit stack, re-identified per section: a NavigationLink push
+            // (History → MeetingDetailView) stays on the column's stack when the
+            // sidebar selection changes, hiding the new root. Resetting identity
+            // pops any pushed page when switching sections.
+            NavigationStack {
+                switch selection {
+                case .newMeeting, nil: NewMeetingView(form: newMeetingForm)
+                case .history: HistoryListView()
+                case .templates: TemplateListView()
+                case .settings: SettingsView()
+                }
             }
+            .id(selection)
         }
         .frame(minWidth: 980, minHeight: 640)
     }
