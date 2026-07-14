@@ -58,3 +58,26 @@ private let request = MinutesRequest(
     let models = try await provider.listModels(apiKey: nil)
     #expect(models == ["sonnet", "opus", "haiku"])
 }
+
+@Test(.timeLimit(.minutes(1)))
+func largePromptAndChattyStderrDoNotDeadlock() async throws {
+    let json = #"{"type":"result","is_error":false,"result":"ok","usage":{"input_tokens":1,"output_tokens":1}}"#
+    let url = FileManager.default.temporaryDirectory
+        .appendingPathComponent("mf-claude-stub-\(UUID().uuidString)")
+    let script = """
+    #!/bin/sh
+    head -c 131072 /dev/zero | tr '\\0' 'e' >&2
+    cat > /dev/null
+    cat <<'EOF'
+    \(json)
+    EOF
+    """
+    try script.write(to: url, atomically: true, encoding: .utf8)
+    try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: url.path)
+    let provider = ClaudeCodeProvider(executableURL: url)
+    let bigPrompt = String(repeating: "x", count: 200_000)
+    let request = MinutesRequest(systemPrompt: "s", userPrompt: bigPrompt, model: "sonnet")
+    let (text, usage) = try await drain(try await provider.generate(request))
+    #expect(text == "ok")
+    #expect(usage?.inputTokens == 1)
+}

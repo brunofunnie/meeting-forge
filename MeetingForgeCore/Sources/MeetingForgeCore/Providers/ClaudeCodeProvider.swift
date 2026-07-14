@@ -35,6 +35,10 @@ public struct ClaudeCodeProvider: MinutesProvider {
         return URL(fileURLWithPath: path)
     }
 
+    private final class ProcessBox: @unchecked Sendable {
+        let process = Process()
+    }
+
     public func generate(_ request: MinutesRequest) async throws -> AsyncThrowingStream<MinutesEvent, Error> {
         guard let executableURL else {
             throw ProviderError.executableNotFound("claude CLI not found — install Claude Code or set the path in Settings")
@@ -45,11 +49,12 @@ public struct ClaudeCodeProvider: MinutesProvider {
         \(request.userPrompt)
         """
         let model = request.model
+        let box = ProcessBox()
 
         return AsyncThrowingStream { continuation in
             let task = Task.detached {
                 do {
-                    let process = Process()
+                    let process = box.process
                     process.executableURL = executableURL
                     process.arguments = ["-p", "--output-format", "json", "--model", model]
                     let stdinPipe = Pipe(), stdoutPipe = Pipe(), stderrPipe = Pipe()
@@ -57,11 +62,21 @@ public struct ClaudeCodeProvider: MinutesProvider {
                     process.standardOutput = stdoutPipe
                     process.standardError = stderrPipe
                     try process.run()
-                    stdinPipe.fileHandleForWriting.write(Data(prompt.utf8))
-                    try stdinPipe.fileHandleForWriting.close()
 
-                    let stdout = try stdoutPipe.fileHandleForReading.readToEnd() ?? Data()
-                    let stderr = try stderrPipe.fileHandleForReading.readToEnd() ?? Data()
+                    // Pipe buffers are ~64KB; writing stdin or draining either output
+                    // sequentially deadlocks once any buffer fills. All three run concurrently.
+                    let stdinData = Data(prompt.utf8)
+                    let stdinHandle = stdinPipe.fileHandleForWriting
+                    let stdinTask = Task.detached {
+                        try? stdinHandle.write(contentsOf: stdinData)
+                        try? stdinHandle.close()
+                    }
+                    let stdoutTask = Task.detached { (try? stdoutPipe.fileHandleForReading.readToEnd()) ?? Data() }
+                    let stderrTask = Task.detached { (try? stderrPipe.fileHandleForReading.readToEnd()) ?? Data() }
+
+                    await stdinTask.value
+                    let stdout = await stdoutTask.value
+                    let stderr = await stderrTask.value
                     process.waitUntilExit()
 
                     guard process.terminationStatus == 0 else {
