@@ -37,9 +37,10 @@ public final class AppleSpeechEngine: TranscriptionEngine {
     /// NLLanguageRecognizer, then run the full pass in the detected language.
     private func resolveLanguage(_ language: MeetingLanguage, fileURL: URL) async throws -> String {
         if let identifier = language.localeIdentifier { return identifier }
+        let clip = try probeClip(from: fileURL, seconds: 30)
+        defer { try? FileManager.default.removeItem(at: clip) }
         let probeSegments = try await run(
-            fileURL: fileURL, localeIdentifier: "en_US",
-            limitSeconds: 30, onProgress: { _ in }
+            fileURL: clip, localeIdentifier: "en_US", onProgress: { _ in }
         )
         let probeText = probeSegments.map(\.text).joined(separator: " ")
         let recognizer = NLLanguageRecognizer()
@@ -48,10 +49,29 @@ public final class AppleSpeechEngine: TranscriptionEngine {
         return recognizer.dominantLanguage == .portuguese ? "pt_BR" : "en_US"
     }
 
+    /// Writes the first `seconds` of the source audio to a temp file for the language probe.
+    /// Bounds the probe physically so the analyzer never processes the full recording.
+    private func probeClip(from fileURL: URL, seconds: Double) throws -> URL {
+        let source = try AVAudioFile(forReading: fileURL)
+        let format = source.processingFormat
+        let frameCount = AVAudioFrameCount(min(
+            source.length,
+            AVAudioFramePosition(format.sampleRate * seconds)))
+        guard frameCount > 0,
+              let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount) else {
+            throw TranscriptionError.failed("cannot read probe audio")
+        }
+        try source.read(into: buffer, frameCount: frameCount)
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("mf-probe-\(UUID().uuidString).caf")
+        let output = try AVAudioFile(forWriting: url, settings: format.settings)
+        try output.write(from: buffer)
+        return url
+    }
+
     private func run(
         fileURL: URL,
         localeIdentifier: String,
-        limitSeconds: Double? = nil,
         onProgress: @escaping @Sendable (Double?) -> Void
     ) async throws -> [TranscriptSegment] {
         let locale = Locale(identifier: localeIdentifier)
@@ -68,7 +88,6 @@ public final class AppleSpeechEngine: TranscriptionEngine {
         let analyzer = SpeechAnalyzer(modules: [transcriber])
         let audioFile = try AVAudioFile(forReading: fileURL)
         let totalSeconds = Double(audioFile.length) / audioFile.fileFormat.sampleRate
-        let effectiveTotal = limitSeconds.map { min($0, totalSeconds) } ?? totalSeconds
 
         // Collect results concurrently with feeding the file.
         let collector = Task<[TranscriptSegment], Error> {
@@ -78,9 +97,8 @@ public final class AppleSpeechEngine: TranscriptionEngine {
                 let range = result.range
                 let start = range.start.seconds
                 let end = range.end.seconds
-                if let limit = limitSeconds, start > limit { break }
                 segments.append(TranscriptSegment(start: start, end: end, text: text))
-                if effectiveTotal > 0 { onProgress(min(end / effectiveTotal, 1.0)) }
+                if totalSeconds > 0 { onProgress(min(end / totalSeconds, 1.0)) }
             }
             return segments
         }
