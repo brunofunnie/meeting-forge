@@ -6,9 +6,18 @@
 
 MeetingForge is a native macOS app that turns one or more meeting audio files into structured meeting minutes ("ata de reunião"). Drop in your audio, it combines multiple files into one, transcribes it locally with optional speaker diarization, then sends the transcript to an AI provider of your choice to generate minutes from a configurable template — in the transcript's language or a language you pick. Minutes can be exported as Markdown, HTML, or PDF, copied to the clipboard, and every processed meeting is kept in history with full transcript, audio, and per-run usage stats (tokens, cost, latency).
 
-## Download
+## Download & install
 
-Grab the latest DMG from the [Releases page](../../releases). The app is ad-hoc signed; on first launch right-click the app → **Open** (or run `xattr -d com.apple.quarantine /Applications/MeetingForge.app`).
+Grab the latest DMG from the [Releases page](../../releases). The app is ad-hoc signed (not notarized), so macOS quarantines it on download. Two ways to install:
+
+- **Easiest:** open the DMG and double-click **Install.command** — it copies the app to /Applications, removes the quarantine flag, and launches it. (macOS may warn about the script itself the first time: right-click → Open.)
+- **Manual:** drag MeetingForge.app to Applications, then run:
+
+  ```bash
+  xattr -d com.apple.quarantine /Applications/MeetingForge.app
+  ```
+
+A DMG can't run anything automatically when you drag the app — that's Gatekeeper working as intended; only notarization with a paid Developer ID removes the prompt entirely.
 
 ## Requirements
 
