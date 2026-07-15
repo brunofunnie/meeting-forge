@@ -1,6 +1,14 @@
+<p align="center">
+  <img src="meeting-forge.png" alt="MeetingForge" width="160">
+</p>
+
 # MeetingForge
 
-MeetingForge is a native macOS app that turns one or more meeting audio files into structured meeting minutes ("ata de reunião"). Drop in your audio, it combines multiple files into one, transcribes it locally with optional speaker diarization, then sends the transcript to an AI provider of your choice to generate minutes from a configurable template. Minutes can be exported as Markdown, HTML, or PDF, copied to the clipboard, and every processed meeting is kept in history with full transcript, audio, and per-run usage stats.
+MeetingForge is a native macOS app that turns one or more meeting audio files into structured meeting minutes ("ata de reunião"). Drop in your audio, it combines multiple files into one, transcribes it locally with optional speaker diarization, then sends the transcript to an AI provider of your choice to generate minutes from a configurable template — in the transcript's language or a language you pick. Minutes can be exported as Markdown, HTML, or PDF, copied to the clipboard, and every processed meeting is kept in history with full transcript, audio, and per-run usage stats (tokens, cost, latency).
+
+## Download
+
+Grab the latest DMG from the [Releases page](../../releases). The app is ad-hoc signed; on first launch right-click the app → **Open** (or run `xattr -d com.apple.quarantine /Applications/MeetingForge.app`).
 
 ## Requirements
 
@@ -37,7 +45,7 @@ CODESIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" scripts/package
 
 ## Provider setup
 
-MeetingForge supports five AI providers for minutes generation. Enter API keys in the app's **Settings** screen — they're stored in the macOS Keychain, never in plain files or SwiftData.
+MeetingForge supports six AI providers for minutes generation. Enter API keys in the app's **Settings** screen — they're stored in the macOS Keychain, never in plain files or SwiftData.
 
 | Provider | Get an API key at | Notes |
 |---|---|---|
@@ -45,20 +53,25 @@ MeetingForge supports five AI providers for minutes generation. Enter API keys i
 | Anthropic (Claude API) | https://console.anthropic.com | API key from the console |
 | Google AI Studio (Gemini) | https://aistudio.google.com | Generate a key from AI Studio |
 | Ollama Cloud | https://ollama.com (API key page in your account) | Cloud-hosted models, not a local Ollama install |
+| Ollama (local) | — | No API key by default. Talks to your local Ollama install; server URL (default `http://localhost:11434`) and an optional key are configurable in Settings. |
 | Claude Code CLI | — | No API key. Requires the `claude` CLI installed locally; MeetingForge detects it and shells out to it. Cost is whatever the CLI itself reports. |
 
-Settings also lets you set a default provider/model pair and refresh each provider's live model list. Cost estimates use a built-in per-model price table (Claude Code reports its own cost directly).
+Providers without a key (or the missing `claude` CLI) show up disabled in the pickers with a hint. Settings also lets you set a default provider/model pair and refresh each provider's live model list — the same dropdown is available when regenerating minutes for an existing meeting. Cost estimates use a built-in per-model price table (Claude Code reports its own cost directly; local Ollama is free).
 
 ## Transcription
 
 - **Apple SpeechAnalyzer / SpeechTranscriber** (default): on-device, built into macOS 26, no model downloads, supports pt-BR and en out of the box.
 - **WhisperKit** (optional): CoreML Whisper, switchable in Settings. Better accuracy on noisy or accented audio. Models (base, small, large-v3, large-v3-turbo) are downloaded on demand from the Settings model manager; a run won't start on WhisperKit until a model is downloaded.
 
-Transcription language is selectable per run: Portuguese (pt-BR), English, or auto-detect between the two. Minutes are generated in the same language as the transcript.
+Transcription language is selectable per run: Portuguese (pt-BR), English, or auto-detect between the two. The minutes output language is a separate choice — "Same as audio" (default), Portuguese (BR), or English — so an English meeting can produce uma ata em português, and vice versa. Regenerating reuses the meeting's stored choice.
 
 ## Diarization (optional)
 
 Turn on the diarization checkbox when starting a meeting to get speaker-labeled transcripts (S1, S2, ...) via FluidAudio. Models download automatically on first use. Speakers can be renamed after the fact; regenerating minutes picks up the new names without re-transcribing.
+
+## History
+
+Every processed meeting is stored with its audio, transcript, and all minutes runs. From History you can reopen a meeting (Minutes / Transcript / Audio / Stats tabs), regenerate minutes with a different provider, model, or template without re-transcribing, and delete a meeting (with confirmation — removes the record and its audio files). Rows show date, time, status, and the last provider/model used.
 
 ## Exports
 
