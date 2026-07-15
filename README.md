@@ -8,16 +8,19 @@ MeetingForge is a native macOS app that turns one or more meeting audio files in
 
 ## Download & install
 
-Grab the latest DMG from the [Releases page](../../releases). The app is ad-hoc signed (not notarized), so macOS quarantines it on download. Two ways to install:
+Grab the latest DMG from the [Releases page](../../releases), open it, and drag MeetingForge to Applications. The app is ad-hoc signed (not notarized), so macOS blocks the first launch — allow it via Privacy & Security:
 
-- **Easiest:** open the DMG and double-click **Install.command** — it copies the app to /Applications, removes the quarantine flag, and launches it. (macOS may warn about the script itself the first time: right-click → Open.)
-- **Manual:** drag MeetingForge.app to Applications, then run:
+1. Double-click MeetingForge → macOS shows *"Apple could not verify…"* → click **Done**
+2. Open **System Settings → Privacy & Security**, scroll to the Security section → *"MeetingForge was blocked to protect your Mac"* → click **Open Anyway** and authenticate
+3. The app opens normally from then on.
 
-  ```bash
-  xattr -d com.apple.quarantine /Applications/MeetingForge.app
-  ```
+Terminal alternative, if you prefer skipping the dialog:
 
-A DMG can't run anything automatically when you drag the app — that's Gatekeeper working as intended; only notarization with a paid Developer ID removes the prompt entirely.
+```bash
+xattr -d com.apple.quarantine /Applications/MeetingForge.app
+```
+
+Only notarization with a paid Apple Developer ID removes the first-launch prompt entirely.
 
 ## Requirements
 

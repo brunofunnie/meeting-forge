@@ -56,23 +56,6 @@ STAGING=$(mktemp -d)
 trap 'rm -rf "$STAGING"' EXIT
 cp -R "$DIST/$APP_NAME.app" "$STAGING/"
 ln -s /Applications "$STAGING/Applications"
-
-# One-click installer: copies the app to /Applications and strips the
-# Gatekeeper quarantine flag (the app is ad-hoc signed, not notarized).
-cat > "$STAGING/Install.command" <<'INSTALLER'
-#!/bin/bash
-set -euo pipefail
-DIR="$(cd "$(dirname "$0")" && pwd)"
-APP="$DIR/MeetingForge.app"
-[ -d "$APP" ] || { echo "MeetingForge.app not found next to this script."; exit 1; }
-echo "Installing MeetingForge to /Applications…"
-rm -rf /Applications/MeetingForge.app
-cp -R "$APP" /Applications/
-xattr -dr com.apple.quarantine /Applications/MeetingForge.app 2>/dev/null || true
-echo "Installed. Launching…"
-open /Applications/MeetingForge.app
-INSTALLER
-chmod +x "$STAGING/Install.command"
 hdiutil create -volname "$APP_NAME" -srcfolder "$STAGING" -ov -format UDZO "$DMG_PATH" >/dev/null
 
 echo "==> Done"
